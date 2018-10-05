@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"sync"
+
+	"./meta"
 	// github.com/patrickmn/go-cache
 	// github.com/joho/godotenv
 )
@@ -51,6 +53,7 @@ func sendAlert(msg string) {
 }
 
 func main() {
+	meta.RefreshMeta()
 	log.Printf("에러로그 리더기 시작")
 	flag.Parse()
 
