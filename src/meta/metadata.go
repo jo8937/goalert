@@ -27,26 +27,31 @@ type Keywords struct {
 	Keywords []string `json:"keywords"`
 }
 
-func LoadConfig() (int, error) {
+func LoadConfig() (string, string, string, int, string) {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
-	port, err := strconv.Atoi(os.Getenv("PORT"))
+	username := os.Getenv("DBUSER")
+	password := os.Getenv("DBPASS")
+	host := os.Getenv("HOST")
+	dbname := os.Getenv("DBNAME")
 
+	port, err := strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
 		log.Fatal("Port is not number")
 	}
 
-	return port, nil
+	return username, password, host, port, dbname
 }
 
 func ReadMeta() {
-	port, _ := LoadConfig()
-
+	username, password, host, port, dbname := LoadConfig()
+	connecturl := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", username, password, host, port, dbname)
+	fmt.Println(connecturl)
 	// Open database connection
-	db, err := sql.Open("mysql", fmt.Sprintf("tester:test1111@tcp(localhost:%d)/testdb", port))
+	db, err := sql.Open("mysql", connecturl)
 	if err != nil {
 		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
 	}
