@@ -39,6 +39,7 @@ func startReadSTDIN() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		line := scanner.Text()
+
 		log.Println(line)
 	}
 	wg.Done()
