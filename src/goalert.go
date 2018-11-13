@@ -34,14 +34,11 @@ func startManageServer() {
 	wg.Done()
 }
 
-// filter_exec 에서 끊임없이 stdin 받는 부분
+// filter_exec 에서 EOF 까지 끊임없이 stdin 받는 부분
 func startReadSTDIN() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		line := scanner.Text()
-		if line == "." {
-			break
-		}
 		log.Println(line)
 	}
 	wg.Done()
