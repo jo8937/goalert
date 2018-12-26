@@ -21,6 +21,7 @@ import (
 
 var (
 	//rankingSet *SortedSet
+	XORKey     = int64(99181225)
 	rankingSet = sortedset.New()
 )
 
@@ -102,6 +103,7 @@ func WriteRanking(jsonData []byte) (bool, error) {
 		return false, errors.New("tm key not int")
 	}
 	secondInt64 := int64(second)
+	secondInt64 = secondInt64 ^ XORKey
 	secondString := strconv.FormatInt(secondInt64, 10)
 
 	data := map[string]string{
@@ -130,10 +132,15 @@ func GetRankingJson() (string, error) {
 
 //
 func StartRedirectServer() {
-	uri_prefix := "/santaserver"
-	http.HandleFunc(uri_prefix+"/regist", func(w http.ResponseWriter, req *http.Request) {
-		b, err := ioutil.ReadAll(req.Body)
-		err = SetRankingRegist(b)
+	uriPrefix := "/santaserver"
+	http.HandleFunc(uriPrefix+"/regist", func(w http.ResponseWriter, req *http.Request) {
+		b, err0 := ioutil.ReadAll(req.Body)
+		if err0 != nil {
+			w.WriteHeader(500)
+			w.Write([]byte("requset body read error"))
+		}
+
+		_, err := WriteRanking(b)
 		if err != nil {
 			w.WriteHeader(500)
 			w.Write([]byte(err.Error()))
@@ -143,13 +150,19 @@ func StartRedirectServer() {
 		//w.Write([]byte(lastpath))
 	})
 
-	http.HandleFunc(uri_prefix+"/ending", func(w http.ResponseWriter, req *http.Request) {
-		newUrl := "/santa_ending.html"
-		http.Redirect(w, req, newUrl, http.StatusSeeOther)
+	http.HandleFunc(uriPrefix+"/ending", func(w http.ResponseWriter, req *http.Request) {
+		http.Redirect(w, req, "/santa_ending.html", http.StatusSeeOther)
 	})
 
-	http.HandleFunc(uri_prefix+"/ranking", func(w http.ResponseWriter, req *http.Request) {
-
+	// response json format [{"Value":{"regdate":"2018-12-26 14:53:05","sec":"99181188"}},{"Value":{"regdate":"2018-12-26 14:53:05","sec":"99181219"}}]
+	http.HandleFunc(uriPrefix+"/ranking", func(w http.ResponseWriter, req *http.Request) {
+		js, err := GetRankingJson()
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+		} else {
+			w.Write([]byte(js))
+		}
 	})
 
 	http.ListenAndServe(":8087", nil)
