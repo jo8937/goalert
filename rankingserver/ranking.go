@@ -86,6 +86,8 @@ func ReadRankingFromDB(k string) (string, error) {
 func WriteRanking(jsonData []byte) (bool, error) {
 	var dat map[string]interface{}
 
+	log.Println(string(jsonData))
+
 	if err := json.Unmarshal(jsonData, &dat); err != nil {
 		log.Println(err)
 		return false, err
@@ -122,7 +124,6 @@ func SetRankingRegist(body []byte) error {
 
 func GetRankingJson() (string, error) {
 	rankins := rankingSet.GetByRankRange(1, 10, false)
-	log.Println(rankins)
 	str, err := json.Marshal(rankins)
 	if err != nil {
 		return "", err
