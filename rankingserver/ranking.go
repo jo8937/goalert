@@ -132,7 +132,7 @@ func GetRankingJson() (string, error) {
 }
 
 //
-func StartRedirectServer() {
+func StartServer() {
 	uriPrefix := "/santaserver"
 	http.HandleFunc(uriPrefix+"/regist", func(w http.ResponseWriter, req *http.Request) {
 		b, err0 := ioutil.ReadAll(req.Body)
@@ -171,4 +171,5 @@ func StartRedirectServer() {
 
 func main() {
 	flag.Parse()
+	StartServer()
 }
