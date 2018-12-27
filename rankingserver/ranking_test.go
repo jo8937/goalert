@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"sync"
 	"testing"
+	"time"
 )
 
 // "github.com/patrickmn/go-cache"
@@ -18,12 +20,38 @@ func TestServerPath(t *testing.T) {
 	wg.Wait()
 }
 
+func TestDB(t *testing.T) {
+	var err error
+	ds := new(DataSource)
+	err = ds.Connect()
+	if err != nil {
+		panic(err)
+	}
+	defer ds.conn.Close()
+	r := Ranking{10, time.Now(), []byte("test")}
+	err = ds.InsertRanking(r)
+	if err != nil {
+		panic(err)
+	}
+
+	rankingList, err := ds.ReadRankingList()
+	if err != nil {
+		panic(err)
+	}
+	for i, ranking := range rankingList {
+		log.Printf("%d %d %s %s \n", i, ranking.sec, ranking.cmt, ranking.regdate)
+	}
+}
+
 func TestFunc(t *testing.T) {
-	WriteRanking([]byte(`{"tm":10}`))
-	WriteRanking([]byte(`{"tm":5}`))
-	WriteRanking([]byte(`{"tm":99}`))
-	WriteRanking([]byte(`{"tm":2}`))
-	WriteRanking([]byte(`{"tm":45}`))
+	WriteRanking([]byte(`{"tm":99181192}`))
+	WriteRanking([]byte(`{"tm":99181237}`))
+	WriteRanking([]byte(`{"tm":99181186}`))
+	WriteRanking([]byte(`{"tm":99181235}`))
+	WriteRanking([]byte(`{"tm":99181238}`))
+	WriteRanking([]byte(`{"tm":99181194}`))
+	WriteRanking([]byte(`{"tm":99181236}`))
+	WriteRanking([]byte(`{"tm":99181234}`))
 
 	js, err := GetRankingJson()
 
