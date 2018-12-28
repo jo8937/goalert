@@ -1,4 +1,4 @@
-package ranking
+package main
 
 import (
 	"database/sql"

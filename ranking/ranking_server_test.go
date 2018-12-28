@@ -1,9 +1,8 @@
-package ranking
+package main
 
 // https://github.com/valyala/fasthttp/blob/master/examples/helloworldserver/helloworldserver.go
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -38,8 +37,8 @@ func GetSampleLogJSON() string {
 // 	}
 // }
 
-func waitForPort(waitFunc func()) {
-	for !serverAvailable() {
+func waitForPort(t *testing.T, waitFunc func()) {
+	for !serverAvailable(t) {
 		time.Sleep(time.Second)
 		waitFunc()
 	}
@@ -85,11 +84,11 @@ func checkError(err error) {
 	}
 }
 
-func serverAvailable() bool {
+func serverAvailable(t *testing.T) bool {
 	// GET 호출
 	resp, err := http.Get(testURL)
 	if err != nil {
-		log.Print(err)
+		t.Log(err)
 		return false
 	}
 	if resp.StatusCode == 200 {
@@ -98,14 +97,14 @@ func serverAvailable() bool {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("%s\n", string(data))
+		t.Logf("avail : %s\n", string(data))
 	}
 	return true
 }
 
 func Test_WaitServer(t *testing.T) {
 	t.Log("start waiting server...")
-	waitForPort(func() {
+	waitForPort(t, func() {
 		t.Log("wait a second...")
 	})
 	t.Log("ok")
@@ -124,8 +123,9 @@ func Test_Server(t *testing.T) {
 
 	Test_WaitServer(t)
 
-	InputTest(t)
 	ReadTest(t)
+	// InputTest(t)
+	// ReadTest(t)
 
 	server.Shutdown(nil)
 

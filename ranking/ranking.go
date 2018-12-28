@@ -1,4 +1,4 @@
-package ranking
+package main
 
 import (
 	"encoding/json"
@@ -25,11 +25,41 @@ var (
 	wg               sync.WaitGroup
 )
 
+func WriteRankingToDB(sec int) error {
+	if globalDatasource.conn == nil {
+		log.Printf("database not connected. sec : %d\n", sec)
+		return errors.New("database not connected")
+	}
+	err := globalDatasource.InsertRanking(Ranking{sec, time.Now(), []byte("")})
+	return err
+}
+
+func ReadRankingToMemoryFromDB() error {
+	if globalDatasource.conn == nil {
+		log.Println("database not connected")
+		return errors.New("database not connected")
+	}
+	rankingList, err := globalDatasource.ReadRankingList()
+	if err != nil {
+		return err
+	}
+	for _, ranking := range rankingList {
+		//log.Printf("%d %d %s %s \n", i, ranking.sec, ranking.cmt, ranking.regdate)
+		secondString := strconv.Itoa(ranking.sec)
+		data := map[string]string{
+			"sec":     secondString,
+			"regdate": time.Now().Format("2006-01-02 15:04:05"),
+		}
+		rankingSet.AddOrUpdate(secondString, sortedset.SCORE(ranking.sec), data)
+	}
+	return nil
+}
+
 // async write db
 func WriteRanking(jsonData []byte) (bool, error) {
 	var dat map[string]interface{}
 
-	log.Println(string(jsonData))
+	log.Printf("input json : %s\n", string(jsonData))
 
 	if err := json.Unmarshal(jsonData, &dat); err != nil {
 		log.Println(err)
@@ -63,28 +93,40 @@ func WriteRanking(jsonData []byte) (bool, error) {
 	}
 
 	added := rankingSet.AddOrUpdate(secondString, sortedset.SCORE(secondInt64), data)
-	return added, nil
-}
 
-func SetRankingRegist(body []byte) error {
-	log.Printf("%s\n", body)
-	return nil
+	go WriteRankingToDB(int(secondInt64))
+
+	return added, nil
 }
 
 func GetRankingJson() (string, error) {
 	rankins := rankingSet.GetByRankRange(1, 10, false)
+
+	if rankins == nil {
+		return "[]", nil
+	}
+
 	str, err := json.Marshal(rankins)
 	if err != nil {
-		return "", err
+		return "[]", err
 	}
+
 	return string(str), nil
 }
 
 //
 func StartServer() {
 
+	log.Println("start connect DB ")
 	globalDatasource.Connect()
 	defer globalDatasource.Close()
+
+	log.Println("start read old rankings ")
+	dberr := ReadRankingToMemoryFromDB()
+	if dberr != nil {
+		panic("cannot read from DB")
+	}
+
 	uriPrefix := "/santaserver"
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
@@ -126,6 +168,8 @@ func StartServer() {
 	host := ":8087"
 	//server := &http.Server{Addr: ":8087", Handler: s}
 	server = &http.Server{Addr: host}
+
+	log.Println("start server ...")
 	wg.Add(1)
 	go func() {
 		// returns ErrServerClosed on graceful close
