@@ -1,4 +1,4 @@
-package main
+package ranking
 
 import (
 	"fmt"
@@ -11,14 +11,8 @@ import (
 // "github.com/patrickmn/go-cache"
 
 var (
-	wg sync.WaitGroup
+	testwg sync.WaitGroup
 )
-
-func TestServerPath(t *testing.T) {
-	wg.Add(1)
-	//StartRedirectServer()
-	wg.Wait()
-}
 
 func TestDB(t *testing.T) {
 	var err error

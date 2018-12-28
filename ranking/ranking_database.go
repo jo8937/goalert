@@ -1,4 +1,4 @@
-package main
+package ranking
 
 import (
 	"database/sql"
@@ -34,9 +34,14 @@ type DatabaseConfig struct {
 	dbname   string
 }
 
+func (ds *DataSource) Close() error {
+	err := ds.conn.Close()
+	return err
+}
+
 // DB접속. 접속후 conn 변수를 맴버변수로 저장함
 func (ds *DataSource) Connect() error {
-	dbconf := LoadConfig()
+	dbconf := ds.LoadConfig()
 	// Open database connection
 	ds.errorLog = log.New(os.Stderr, "### ", log.Ldate|log.Ltime)
 	var err error
@@ -89,8 +94,7 @@ func (ds *DataSource) ReadRankingList() ([]Ranking, error) {
 	return rankingList, nil
 }
 
-// generated from [configure_source_generator.sh]
-func LoadConfig() DatabaseConfig {
+func (ds *DataSource) LoadConfig() DatabaseConfig {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")

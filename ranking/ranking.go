@@ -1,4 +1,4 @@
-package main
+package ranking
 
 import (
 	"encoding/json"
@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/wangjia184/sortedset"
@@ -19,7 +20,9 @@ var (
 	//rankingSet *SortedSet
 	XORKey           = int64(99181225)
 	rankingSet       = sortedset.New()
-	globalDatasource *DataSource
+	globalDatasource = new(DataSource)
+	server           *http.Server
+	wg               sync.WaitGroup
 )
 
 // async write db
@@ -79,10 +82,15 @@ func GetRankingJson() (string, error) {
 
 //
 func StartServer() {
-	
-	globalDatasource := 
-	
+
+	globalDatasource.Connect()
+	defer globalDatasource.Close()
 	uriPrefix := "/santaserver"
+
+	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		w.Write([]byte("ok"))
+	})
+
 	http.HandleFunc(uriPrefix+"/regist", func(w http.ResponseWriter, req *http.Request) {
 		b, err0 := ioutil.ReadAll(req.Body)
 		if err0 != nil {
@@ -115,7 +123,25 @@ func StartServer() {
 		}
 	})
 
-	http.ListenAndServe(":8087", nil)
+	host := ":8087"
+	//server := &http.Server{Addr: ":8087", Handler: s}
+	server = &http.Server{Addr: host}
+	wg.Add(1)
+	go func() {
+		// returns ErrServerClosed on graceful close
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+			// NOTE: there is a chance that next line won't have time to run,
+			// as main() doesn't wait for this goroutine to stop. don't use
+			// code with race conditions like these for production. see post
+			// comments below on more discussion on how to handle this.
+			log.Fatalf("ListenAndServe(): %s", err)
+		}
+		wg.Done()
+	}()
+	log.Printf("server started at %s\n", host)
+	wg.Wait()
+
+	log.Println("server stopped")
 }
 
 func main() {
