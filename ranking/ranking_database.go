@@ -72,7 +72,7 @@ func (ds *DataSource) ReadRankingList() ([]Ranking, error) {
 	// Prepare statement for reading data
 	var rankingList []Ranking
 
-	stmtOut, err := ds.conn.Prepare("SELECT sec, regdate, cmt FROM t_santa_jump_user_ranking ORDER BY sec DESC LIMIT 10")
+	stmtOut, err := ds.conn.Prepare("select sec, regdate, cmt from t_santa_jump_user_ranking order by sec asc, regdate desc limit 20")
 	if err != nil {
 		return nil, err
 	}
